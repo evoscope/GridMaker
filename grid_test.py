@@ -57,14 +57,14 @@ def createGridData(image_path, sqrSize):
             "squareSize": sqrSize}
 
 
-def createSvgWithLetters(outputSvgPath, lineWidth, gridData):
-    image = gridData["image"]
-    width = gridData["width"]
-    height = gridData["height"]
-    grid_width = gridData["gridWidth"]
-    grid_height = gridData["gridHeight"]
-    letterGrid = gridData["letterGrid"]
-    sqrSize = gridData["squareSize"]
+def createSvgWithLetters(outputSvgPath, lineWidth, gData):
+    image = gData["image"]
+    width = gData["width"]
+    height = gData["height"]
+    grid_width = gData["gridWidth"]
+    grid_height = gData["gridHeight"]
+    letterGrid = gData["letterGrid"]
+    sqrSize = gData["squareSize"]
 
     # SVG Zeichnung erstellen
     dwg = svgwrite.Drawing(outputSvgPath, size=(width, height))
