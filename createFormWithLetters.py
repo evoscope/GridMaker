@@ -3,7 +3,7 @@ import svgwrite
 from PIL import Image
 
 
-def generate_weighted_letter_grid(width, height):
+def generateWeightedLetterGrid(width, height):
     letters = (
             "E" * 100 +  # 16,11 %
             "N" * 100 +  # 10,33 %
@@ -36,7 +36,7 @@ def generate_weighted_letter_grid(width, height):
     return [[random.choice(letters) for _ in range(width)] for _ in range(height)]
 
 
-def create_svg_with_letters(image_path, square_size, output_svg_path):
+def createGridData(image_path, sqrSize):
     # Bild einlesen und vorbereiten
     image = Image.open(image_path)
     if image.mode != 'RGBA':
@@ -44,53 +44,71 @@ def create_svg_with_letters(image_path, square_size, output_svg_path):
     width, height = image.size
 
     # Gewichtete Buchstaben generieren
-    grid_width = width // square_size
-    grid_height = height // square_size
-    letter_grid = generate_weighted_letter_grid(grid_width, grid_height)
+    gridWidth = width // sqrSize
+    gridHeight = height // sqrSize
+    letterGrid = generateWeightedLetterGrid(gridWidth, gridHeight)
+
+    return {"image": image,
+            "width": width,
+            "height": height,
+            "gridWidth": gridWidth,
+            "gridHeight": gridHeight,
+            "letterGrid": letterGrid,
+            "squareSize": sqrSize}
+
+
+def createSvgWithLetters(outputSvgPath, lineWidth, gData):
+    image = gData["image"]
+    width = gData["width"]
+    height = gData["height"]
+    grid_width = gData["gridWidth"]
+    grid_height = gData["gridHeight"]
+    letterGrid = gData["letterGrid"]
+    sqrSize = gData["squareSize"]
 
     # SVG Zeichnung erstellen
-    dwg = svgwrite.Drawing(output_svg_path, size=(width, height))
+    dwg = svgwrite.Drawing(outputSvgPath, size=(width, height))
 
     # Schriftgröße basierend auf Quadratgröße festlegen
-    font_size = int(square_size * 0.8)
+    fontSize = int(sqrSize * 0.8)
 
     # Parameter festlegen
-    horizontal_offset = 0
-    vertical_offset = (0.2852 * square_size) - 0.0254
-    stroke_width = 0.2
+    horizontalOffset = 0
+    verticalOffset = (0.2852 * sqrSize) - 0.0254
+    stroke_width = lineWidth
 
     # Jedes Quadrat im Raster durchlaufen
     for i in range(grid_height):
         for j in range(grid_width):
-            x = j * square_size
-            y = i * square_size
+            x = j * sqrSize
+            y = i * sqrSize
 
             # Farbe des Quadrats überprüfen
-            black_count = 0
-            total_count = 0
-            for dx in range(square_size):
-                for dy in range(square_size):
+            blackCount = 0
+            totalCount = 0
+            for dx in range(sqrSize):
+                for dy in range(sqrSize):
                     if x + dx < width and y + dy < height:
                         pixel = image.getpixel((x + dx, y + dy))
                         if pixel[3] > 128:  # Alpha-Wert
-                            total_count += 1
+                            totalCount += 1
                             if pixel[0] < 128:  # RGB-Werte für Schwarz
-                                black_count += 1
+                                blackCount += 1
 
             # Quadrat mit Buchstabe füllen, wenn überwiegend schwarz
-            if total_count > 0 and black_count / total_count > 0.5:
+            if totalCount > 0 and blackCount / totalCount > 0.5:
                 group = dwg.g()
                 group.add(dwg.rect(insert=(x, y),
-                                   size=(square_size, square_size),
+                                   size=(sqrSize, sqrSize),
                                    fill='white',
                                    stroke='black',
                                    stroke_width=stroke_width,
                                    ))
                 # Text zentrieren
-                text = dwg.text(letter_grid[i][j],
-                                insert=(x + square_size / 2 + horizontal_offset, y + square_size / 2 + vertical_offset),
+                text = dwg.text(letterGrid[i][j],
+                                insert=(x + sqrSize / 2 + horizontalOffset, y + sqrSize / 2 + verticalOffset),
                                 text_anchor="middle",
-                                font_size=font_size,
+                                font_size=fontSize,
                                 font_family="Andika New Basic")
                 # Anpassen der Vertikalen Zentrierung
                 text['dominant-baseline'] = 'middle'
@@ -100,4 +118,11 @@ def create_svg_with_letters(image_path, square_size, output_svg_path):
     # SVG speichern
     dwg.save()
 
-create_svg_with_letters('images/308654.png', 10, 'output_with_letters.svg')
+
+imagePath = 'images/308654.png'
+squareSize = 20
+
+gridData = createGridData(imagePath, squareSize)
+
+createSvgWithLetters('output_with_letters_1.svg', 0.2, gridData)
+createSvgWithLetters('output_with_letters_0.svg', 0, gridData)
